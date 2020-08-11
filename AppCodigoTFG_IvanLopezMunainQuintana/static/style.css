@@ -1,0 +1,62 @@
+body{
+    position: relative;
+}
+
+#all-forms{
+    padding: 20px;
+    width: 30%;
+    height: 100vh;
+    position: fixed;
+    border-right: 2px gray solid;
+    display: inline-block;
+}
+#all-forms>div{
+    margin-bottom: 20px;
+}
+.radio{
+    display: inline-block;
+    margin-right: 6px;
+}
+.radio input, .radio label{
+    margin-right: 2px;
+    cursor: pointer;
+}
+#search-title{
+    margin: 40px 0px;
+}
+.input-group{
+    margin: 20px 0px;
+}
+select{
+    height: 38px !important;
+    width: 20px !important;
+}
+#num-res{
+    width: 80px;
+    display: inline-block;
+}
+[type="submit"]{
+    margin-top: 40px;
+    width: 100%;
+}
+#data{
+    width: 100%;
+    height: 100vh;
+    right: 0px;
+    position: absolute;
+    display: inline-flex;
+    padding: 5%;
+    justify-content: center;
+    align-content: center;
+}
+th{
+    white-space: nowrap;
+}
+tbody{
+    overflow-y: scroll;
+
+}
+a.btn {
+    color: white !important;
+    cursor: pointer;
+}

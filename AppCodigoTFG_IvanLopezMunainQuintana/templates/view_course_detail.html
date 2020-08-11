@@ -1,0 +1,470 @@
+<!--
+    Author: Iván López de Munain Quintana
+    Date: Feb-Jul, 2020
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Details</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <style>
+
+
+.tab {
+
+  overflow-y: scroll;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+.tablink {
+
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  font-size: 17px;
+  width: 20%;
+}
+
+/* Style the buttons inside the tab */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: 0.2px solid black;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  font-size: 17px;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: rgb(218, 239, 247);
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: rgb(189, 234, 252);
+}
+
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  text-align: center;
+  -webkit-animation: fadeEffect 1s;
+  animation: fadeEffect 1s;
+}
+
+/* Fade in tabs */
+@-webkit-keyframes fadeEffect {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
+
+@keyframes fadeEffect {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
+    </style>
+</head>
+<body style="background-color:#F7F7D0;">
+
+    <hr>
+
+    <h1 align="center">Information about the course</h1>
+
+    <hr>
+    <div id="back" style="top:125px ; left: 5%; width: 90%; height: 100vh; position: absolute;"> 
+        <button class="button button1" style="border-radius: 12px; border: 1px solid black;"> 
+            <a  href="/check_connection/{{token}}/{{uri}}/{{protocol}}" style="padding-left: 5px;padding-right: 5px;">Back</a>
+        </button>
+    </div>
+
+
+    <div id="data" style="top:175px ; left: 5%; width: 90%; height: 100vh; position: absolute;"> 
+        <div class="tab" style="height: 56px;" >
+            {% if results['course_detail'] %}
+                <button class="tablink" id="defaultOpen" onclick="getInfo(event, 'Details')">Details</button>
+            {% endif %}
+            {% if results['course_users_data'] %}
+                <button class="tablink" onclick="getInfo(event, 'Users')">Enroll Users</button>
+            {% endif %}
+            {% if results['course_content'] %}
+                <button class="tablink" onclick="getInfo(event, 'content')">Modules and resources</button>
+            {% endif %}
+            {% if results['course_forum'] %}
+                <button class="tablink" onclick="getInfo(event, 'forums')">Forums</button>
+            {% endif %}
+            {% if results['course_label'] %}
+                <button class="tablink" onclick="getInfo(event, 'labels')">Labels</button>
+            {% endif %}
+            {% if results['course_workshop'] %}
+                <button class="tablink" onclick="getInfo(event, 'workshops')">Workshops</button>
+            {% endif %}
+            {% if results['course_wiki'] %}
+                <button class="tablink" onclick="getInfo(event, 'wikis')">Wikis</button>
+            {% endif %}
+            {% if results['course_choice'] %}
+                <button class="tablink" onclick="getInfo(event, 'choices')" >Choices</button>
+            {% endif %}
+            {% if results['course_database'] %}
+                <button class="tablink" onclick="getInfo(event, 'databases')">Databases</button>
+            {% endif %}
+            {% if results['course_folder'] %}
+                <button class="tablink" onclick="getInfo(event, 'folders')">Folders</button>
+            {% endif %}
+            {% if results['course_glossary'] %}
+                <button class="tablink" onclick="getInfo(event, 'glossaries')">Glossaries</button>
+            {% endif %}
+            {% if results['course_quizz'] %}
+                <button class="tablink" onclick="getInfo(event, 'quizz')">Quizzs</button>
+            {% endif %}
+            {% if results['course_url']%}
+                <button class="tablink" onclick="getInfo(event, 'url')">URLs</button>
+            {% endif %}
+        </div> 
+        <br>
+        <div id="Details" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        {% if data_keys %}
+                        <tr>
+                            {% for data_key in data_keys %}
+                                    <th scope="col">{{ data_key }}</th>
+                            {% endfor %}
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_detail'] %}
+                        {% for data_result in  results['course_detail'][0]%}
+                            <tr>
+                                {% for ind in data_result %}
+                                        <td scope="row">{{ ind }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <div id="Users" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">Apellido</th>
+                            <th scope="col">E-mail</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_users_data'] %}
+                        {% for data_result in  results['course_users_data'] %}
+                        <tr>
+                            {% for ind in data_result %}
+                            
+                                <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+
+          </div>
+          
+          <div id="content" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Nombre</th>
+                            <th scope="col">Author</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_content'] %}
+                        {% for data_result in  results['course_content'] %}
+                        <tr>
+                            {% for ind in data_result %}
+                            
+                                <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+          </div>
+
+          <div id="forums" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Identificador</th>
+                            <th scope="col">Course ID</th>
+                            <th scope="col">Tipo</th>
+                            <th scope="col">Nombre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_forum'] %}
+                        {% for data_result in  results['course_forum'] %}
+                        <tr>
+                            {% for ind in data_result %}
+                            
+                                <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+          </div>
+
+          <div id="labels" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Identificador</th>
+                            <th scope="col">Module ID</th>
+                            <th scope="col">Course ID</th>
+                            <th scope="col">Nombre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_label'] %}
+                        {% for data_result in  results['course_label'] %}
+                        <tr>
+                            {% for ind in data_result %}
+                            
+                                <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+          </div>
+          <div id="workshops" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Identificador</th>
+                            <th scope="col">Course ID</th>
+                            <th scope="col">Nombre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_workshop'] %}
+                        {% for data_result in  results['course_workshop'] %}
+                        <tr>
+                            {% for ind in data_result %}
+                            
+                                <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+          </div>
+          <div id="wikis" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Identificador</th>
+                            <th scope="col">Module ID</th>
+                            <th scope="col">Course ID</th>
+                            <th scope="col">Nombre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_wiki'] %}
+                        {% for data_result in  results['course_wiki'] %}
+                        <tr>
+                            {% for ind in data_result %}
+                            
+                                <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+          </div>
+          <div id="choices" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Identificador</th>
+                            <th scope="col">Module ID</th>
+                            <th scope="col">Course ID</th>
+                            <th scope="col">Nombre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_choice'] %}
+                        {% for data_result in  results['course_choice'] %}
+                        <tr>
+                            {% for ind in data_result %}
+                            
+                                <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+          </div>
+          <div id="databases" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Identificador</th>
+                            <th scope="col">Course ID</th>
+                            <th scope="col">Nombre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_database'] %}
+                        {% for data_result in  results['course_database'] %}
+                        <tr>
+                            {% for ind in data_result %}
+                            
+                                <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+          </div>
+          <div id="folders" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Identificador</th>
+                            <th scope="col">Module ID</th>
+                            <th scope="col">Course ID</th>
+                            <th scope="col">Nombre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_folder']%}
+                        {% for data_result in  results['course_folder'] %}
+                        <tr>
+                            {% for ind in data_result %}
+                            
+                                <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+          </div>
+          <div id="glossaries" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Identificador</th>
+                            <th scope="col">Module ID</th>
+                            <th scope="col">Course ID</th>
+                            <th scope="col">Nombre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_glossary']%}
+                        {% for data_result in  results['course_glossary'] %}
+                        <tr>
+                            {% for ind in data_result %}
+                            
+                                <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+          </div>
+          <div id="quizz" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Identificador</th>
+                            <th scope="col">Module ID</th>
+                            <th scope="col">Course ID</th>
+                            <th scope="col">Nombre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_quizz']%}
+                        {% for data_result in  results['course_quizz'] %}
+                        <tr>
+                            {% for ind in data_result %}
+                            
+                                <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+          </div>
+          <div id="url" class="tabcontent" style="width: 100%;">
+            <table class="table table-striped">
+                <thead class="thead-dark">
+                        <tr>
+                            <th scope="col">Identificador</th>
+                            <th scope="col">Module ID</th>
+                            <th scope="col">Course ID</th>
+                            <th scope="col">Nombre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if results['course_url']%}
+                        {% for data_result in  results['course_url'] %}
+                        <tr>
+                            {% for ind in data_result %}
+                            
+                                <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+          </div>
+    </div>
+    <script>
+        function getInfo(evt, option) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablink");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+            document.getElementById(option).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        document.getElementById("defaultOpen").click();
+    </script>
+</body>
+</html>

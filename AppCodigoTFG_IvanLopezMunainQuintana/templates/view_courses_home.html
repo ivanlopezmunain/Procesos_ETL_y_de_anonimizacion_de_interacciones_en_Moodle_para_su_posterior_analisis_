@@ -1,0 +1,189 @@
+<!--
+    Author: Iván López de Munain Quintana
+    Date: Feb-Jul, 2020
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Home</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <style>
+
+
+body{
+    position: relative;
+}
+
+#all-forms{
+    padding: 20px;
+    width: 30%;
+    height: 100vh;
+    position: fixed;
+    border-right: 2px gray solid;
+    display: inline-block;
+}
+#all-forms>div{
+    margin-bottom: 20px;
+}
+.radio{
+    display: inline-block;
+    margin-right: 6px;
+}
+.radio input, .radio label{
+    margin-right: 2px;
+    cursor: pointer;
+}
+#search-title{
+    margin: 40px 0px;
+}
+.input-group{
+    margin: 20px 0px;
+}
+select{
+    height: 38px !important;
+    width: 20px !important;
+}
+#num-res{
+    width: 80px;
+    display: inline-block;
+}
+[type="submit"]{
+    margin-top: 40px;
+    width: 100%;
+}
+#data{
+    top:0px;
+    width: 70%;
+    height: 100vh;
+    right: 0px;
+    position: fixed;
+    display: inline-flex;
+    padding: 5%;
+    justify-content: center;
+    align-content: center;
+}
+th{
+    white-space: nowrap;
+}
+tbody{
+    overflow-y: scroll;
+
+}
+a.btn {
+    color: white !important;
+    cursor: pointer;
+}
+
+ #search_course {
+  width: 100%;
+  font-size: 16px;
+  padding: 12px 20px 12px 20px;
+  border: 1px solid #ddd;
+  margin-bottom: 12px;
+  margin-left:0px
+}
+
+</style>
+</head>
+<body style="background-color:#F7F7D0;">
+    <div id="all-forms">
+        <div id="back" > 
+            <button class="button button1" style="border-radius: 12px; border: 1px solid black;"> 
+                <a  href="/Auth" style="padding-left: 5px;padding-right: 5px;">Back</a>
+            </button>
+        </div>
+        <br>
+        <div id="data-params">
+            <h5>
+                Courses asociated to the user
+            </h5>
+            <hr>
+            <p > Select the courses which interest you to view and download data. It is possible to view some information of the subjects to make a better selection. </p>
+
+        </div>
+        <br>
+        <h6> Any help to search?</h6>
+        <hr>
+        <input type="text" id="search_course" onkeyup="myFunction()" placeholder="Search for course.." title="Type in a name">
+        <br>
+        <p > You can type the names of subjects to facilitate the search. Just left select the course and press the button!</p>
+        <button id="button_select" class="btn btn-primary" style="padding: 7px 120px 7px 120px" ><a id="link"  onclick="course_select()">Select courses</a></button>
+    </div>
+
+    <div id="data" >
+        <table class="table table-striped" id="course_table">
+            <thead class="thead-dark">
+                    {% if data_keys %}
+                    <tr>
+                        {% for data_key in data_keys %}
+                                <th scope="col">{{ data_key }}</th>
+                        {% endfor %}
+                        <th scope="col">Info</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% if aux_data %}
+                    {% for data_result in  aux_data%}
+                        <tr>
+                            <td scope="row"> <input type="checkbox"  value={{data_result}} checked /> {{ data_result }}</td>
+                            <td scope="row">
+                                <a  href="/check_connection/{{token}}/{{uri}}/{{protocol}}/{{data_result}}" class="btn btn-success">View</a>
+                            </td>
+                        </tr>      
+                    {% endfor %}
+
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    <script>
+
+
+    function course_select() {
+
+        var  queryString= "/course_selection/{{token}}/{{uri}}/{{protocol}}/"
+        var checkBox = document.querySelectorAll('[type="checkbox"]')
+        var link = document.getElementById('link')
+        for(i=0;i<checkBox.length;i++){
+            if (checkBox[i].checked == true){
+                var mod = checkBox[i].value.slice(3)
+                queryString = queryString + "-" + mod.toString()
+                
+            } 
+        }
+        var submitButton = document.getElementById('button_select')
+        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...'
+        link.href = queryString.toString()
+    }
+
+    function myFunction() {
+        var input, filter, table, tr, td, i, txtValue;
+        input = document.getElementById("search_course");
+        filter = input.value.toUpperCase();
+        table = document.getElementById("course_table");
+        tr = table.getElementsByTagName("tr");
+        for (i = 0; i < tr.length; i++) {
+            td = tr[i].getElementsByTagName("td")[0];
+            if (td) {
+            txtValue = td.textContent || td.innerText;
+            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+            }       
+        }
+        }
+
+
+    </script>
+</body>
+</html>

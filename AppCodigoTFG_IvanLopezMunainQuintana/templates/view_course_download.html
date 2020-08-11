@@ -1,0 +1,478 @@
+<!--
+    Author: Iván López de Munain Quintana
+    Date: Feb-Jul, 2020
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Search</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <style>
+
+body{
+    position: relative;
+}
+
+#all-forms{
+    padding: 20px;
+    width: 30%;
+    height: 100vh;
+    position: fixed;
+    border-right: 2px gray solid;
+    display: inline-block;
+}
+#all-forms>div{
+    margin-bottom: 20px;
+}
+.radio{
+    display: inline-block;
+    margin-right: 6px;
+}
+.radio input, .radio label{
+    margin-right: 2px;
+    cursor: pointer;
+}
+#search-title{
+    margin: 40px 0px;
+}
+.input-group{
+    margin: 20px 0px;
+}
+select{
+    height: 38px !important;
+    width: 20px !important;
+}
+#num-res{
+    width: 80px;
+    display: inline-block;
+}
+[type="submit"]{
+    margin-top: 40px;
+    width: 100%;
+}
+#data{
+    top:0px;
+    width: 70%;
+    height: 100vh;
+    right: 0px;
+    position: fixed;
+    display: inline-flex;
+    padding: 5%;
+    justify-content: center;
+    align-content: center;
+}
+
+th{
+    white-space: nowrap;
+}
+tbody{
+    overflow-y: scroll;
+
+}
+a.btn {
+    color: white !important;
+    cursor: pointer;
+}
+
+.tab {
+
+overflow-y: scroll;
+border: 1px solid #ccc;
+background-color: #f1f1f1;
+}
+
+.tablink {
+
+float: left;
+border: none;
+outline: none;
+cursor: pointer;
+padding: 14px 16px;
+font-size: 17px;
+width: 20%;
+}
+
+/* Style the buttons inside the tab */
+.tab button {
+background-color: inherit;
+float: left;
+border: 0.2px solid black;
+outline: none;
+cursor: pointer;
+padding: 14px 16px;
+transition: 0.3s;
+font-size: 17px;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+background-color: rgb(218, 239, 247);
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+background-color: rgb(189, 234, 252);
+}
+
+.tabcontent {
+overflow-x: auto;
+margin-right: 0px;
+margin-top:60px;
+padding: 6px 12px;
+border: 1px solid #ccc;
+text-align: center;
+-webkit-animation: fadeEffect 1s;
+animation: fadeEffect 1s;
+}
+
+/* Fade in tabs */
+@-webkit-keyframes fadeEffect {
+from {opacity: 0;}
+to {opacity: 1;}
+}
+
+@keyframes fadeEffect {
+from {opacity: 0;}
+to {opacity: 1;}
+}
+</style>
+</head>
+<body style="background-color:#F7F7D0;">
+    <div id="all-forms">
+        <div id="back" > 
+            <button class="button button1" style="border-radius: 12px; border: 1px solid black;"> 
+                {% if mode %}
+                <a  href="/check_connection/{{token}}/{{uri}}/{{protocol}}" style="padding-left: 5px;padding-right: 5px;">Back</a>
+                {% endif %}
+                {% if not mode %}
+                <a  href="/" style="padding-left: 5px;padding-right: 5px;">Back</a>
+                {% endif %}
+            </button>
+        </div>
+        <div id="data-params">
+            <h6>
+                Obtain data about:
+            </h6>
+            <form>
+            <input type="text" placeholder="Information about..." class="form-control" id="list_us" list="fun" >
+            <datalist id="fun">
+                {% if mode %}
+                <option value="All information">Download all possible information</option>
+                {% endif %}
+                <option value="Logs and grades">Get interactions and grades of users</option>
+                {% if mode %}
+                <option value="Users">Get users info</option>
+                <option value="Forums">Get forums info</option>
+                <option value="Wikis">Get wikis info</option>
+                {% endif %}
+            </datalist>
+            
+            </form>
+        </div>
+        <hr>
+        <form id="Logs and grades-form" style="display: none; overflow-y: auto; height: 450px;">
+            <h6> Documentation and requiered parameters </h6>
+            <p> Get all the information about the logs which registered the activity of users in a course. It is possible to search specifying the userid, courseid, moduleid, type of action and event. For example, if the field of userid is empty, all users will be returned. Furthermore, you can get the marks of the users on that subject. </p>
+            <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">Course ID</div>
+                </div>
+                <select placeholder="Select the course ID" class="form-control" id="Log_Course_ID" name="Log_Course_ID">
+                    {% if not mode %}
+                    {% for ind in list_course_ids%}
+                        <option value={{ind[0]}}>{{ind[1]}}</option>
+                    {% endfor %}
+                    {% endif %}
+                    {% if mode %}
+                    {% for ind in list_course_ids%}
+                        <option value={{ind[0]}}>{{ind[1]}}</option>
+                    {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+            <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">&nbsp User ID &nbsp&nbsp</div>
+                </div>
+                <input type="text" placeholder="Type the user ID" class="form-control" id="Log_User_ID" name="Log_User_ID">
+            </div>
+            <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">Module ID</div>
+                </div>
+                <input type="text" placeholder="Type the module ID" class="form-control" id="Log_Module_ID" name="Log_Module_ID">
+            </div>
+            <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">&nbsp Actions &nbsp&nbsp</div>
+                </div>
+                <select placeholder="Select the course ID" class="form-control" id="Log_Action_select" name="Log_Action_select">
+                    <option value="All_actions">All actions</option>
+                    <option value="Create">Create</option>
+                    <option value="View">View</option>
+                    <option value="Update">Update</option>
+                    <option value="Delete">Delete</option>
+                    <option value="All_changes">All changes</option>
+                </select>
+            </div>
+            <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">&nbsp&nbsp Events &nbsp&nbsp</div>
+                </div>
+                <select placeholder="Select the course ID" class="form-control" id="Log_Event_select" name="Log_Event_select">
+                    <option value="All_events">All events</option>
+                    <option value="Teaching">Teaching</option>
+                    <option value="Participating">Participating</option>
+                    <option value="Others">Others</option>
+                </select>
+            </div>
+            <hr>
+            <h6>
+                Download data:
+            </h6>
+            {% if  mode %} 
+            <p> It is possible to download all the data selected or only pre-view the information.</p>
+            {% endif %}
+            {% if not mode %} 
+            <p> It is possible to download all the data selected and view the dashoard, or only pre-view the information.</p>
+            {% endif %}
+            <div class="input-group mb-2">
+            {% if  mode %} 
+            <label style="vertical-align: middle;margin-right: 10px;"><input type="radio" name="download" value="down" /> Download anonymized  data </input></label>
+            {% endif %}
+            {% if not mode %}
+            <label style="vertical-align: middle;margin-right: 10px;"><input type="radio" name="download" value="down" /> Download data and visualize dashboard </input></label>
+            {% endif %}
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 2px;">Download/View data</button>
+        </form>
+
+
+        {% if mode %}
+        <form id="Users-form" style="display: none;overflow-y: auto; height: 450px;">
+            <h6> Documentation and requiered parameters </h6>
+            <p > Get all the information about the users who can access to Moodle, you can search a user specifying his name, username, shortname... </p>
+            <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">Key</div>
+                </div>
+                <input type="text" placeholder="Any field: username, name..." class="form-control" id="Users_key_user" name="Users_key_user" >
+            </div>
+            <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">Value</div>
+                </div>
+                <input type="text" placeholder="The value of the choose field" class="form-control" id="Users_value_user" name="Users_value_user">
+            </div>
+            <hr>
+            <h6>
+                Download data:
+            </h6>
+            <p> It is possible to download all the data selected or only pre-view the information.</p>
+            <div class="input-group mb-2">
+
+            <label style="vertical-align: middle;margin-right: 10px;"><input type="radio" name="download" value="down"/> Download anonymized data </input></label>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 2px;">
+                Download/View data
+            </button>
+        </form>
+        <form id="Forums-form" style="display: none;overflow-y: auto; height: 450px;">
+            <h6> Documentation and requiered parameters </h6>
+            <p > Get all the information about the forums of a course, it is necessary to introduce the course id. </p>
+            <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">Course ID</div>
+                </div>
+                <select placeholder="Select the course ID" class="form-control" id="Forum_Course_ID" name="Forum_Course_ID">
+                    {% for ind in list_course_ids%}
+                        <option value={{ind[0]}}>{{ind[1]}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <hr>
+            <h6>
+                Download data:
+            </h6>
+            <p> It is possible to download all the data selected or only pre-view the information.</p>
+            <div class="input-group mb-2">
+
+            <label style="vertical-align: middle;margin-right: 10px;"><input type="radio" name="download" value="down"/> Download anonymized data </input></label>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 2px;">Download/View data</button>
+        </form>
+        <form id="Wikis-form" style="display: none;overflow-y: auto; height: 450px;">
+            <h6> Documentation and requiered parameters </h6>
+            <p > Get all the information about the wikis of a course, it is necessary to introduce the course id. </p>
+            <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">Course ID</div>
+                </div>
+                <select placeholder="Select the course ID" class="form-control" id="Wiki_Course_ID" name="Wiki_Course_ID">
+                    {% for ind in list_course_ids%}
+                        <option value={{ind[0]}}>{{ind[1]}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <hr>
+            <h6>
+                Download data:
+            </h6>
+            <p> It is possible to download all the data selected or only pre-view the information.</p>
+            <div class="input-group mb-2">
+
+            <label style="vertical-align: middle;margin-right: 10px;"><input type="radio" name="download" value="down"/> Download anonymized data </input></label>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 2px;">Download/View data</button>
+        </form>
+        
+        <form id="All information-form" style="display: none;overflow-y: auto; height: 450px;">
+            <h6> Documentation and requiered parameters </h6>
+            <p > Get all the information avalaible, it is not necessary to introduce any parameters. The data you can download is related to the courses you selected in the before page. </p>
+            <hr>
+            <h6>
+                Download data:
+            </h6>
+            <p> In this option, it is not possible pre-view the data, you only can download it.</p>
+            <div class="input-group mb-2">
+
+            <label style="vertical-align: middle;margin-right: 10px;"><input type="radio" name="All_download" value="down" checked /> Download anonymized data </input></label>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 2px;">Download data</button>
+        </form>
+
+        {% endif %}
+    </div>
+
+
+    <div id="data">
+        {% if not data%}
+        <div id="waiting">
+        <br>
+        <br>
+        <br>
+        <hr>
+        <h1 >Waiting for you!</h1>
+        <img src= "{{url_for('static', filename='waiting.gif')}}" alt="logo"
+        style="position:fixed; right:340px; bottom:200px; width:275px; height:275px; border:none;" />
+        <hr>
+        </div>
+        {% endif %}
+        {% if data %}
+        {% if index != None %}
+        <div class="tab" style="width:100%;height:56px;position:absolute;right:0px;top: 10px;">
+            {% for num in data[1] %}
+                <button  class="tablink"  id="{{data_type}}_selection" value={{num}}  name="{{data_type}}_selection" onclick="updateURL(this)">{{data_type}}{{num}}</button>
+            {% endfor%}
+        </div> 
+        {% endif %}
+        {% if index == None %}
+        <div class="note" style="width:70%;height:56px;position:absolute;margin-right:100px;top: 10px;">
+            <h6>Note:</h6>
+            <p>If the request is too heavy the next table only show the first 200 logs.</p>
+            <hr>
+        </div> 
+        {% endif %}
+        {% endif %}
+        {% if data %}
+        <div id="tabcontent" class="tabcontent" style="width: 90%; height: 95%;">
+        <table class="table table-striped" >
+            <thead class="thead-dark">
+                    {% if data_keys %}
+                    <tr>
+                        {% for data_key in data_keys %}
+                                <th scope="col">{{ data_key }}</th>
+                        {% endfor %}
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% if data %}
+                    {% if index != None %}
+                        {% for data_result in  data[0][index]%}
+                            <tr>
+                                {% for ind in data_result %}
+                                        <td scope="row">{{ ind }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+                    {% if index == None %}
+                    {% for data_result in  data%}
+                        <tr>
+                            {% for ind in data_result %}
+                                    <td scope="row">{{ ind }}</td>
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                    {% endif %}
+                {% endif %}
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+    </div>
+    <script>
+        
+        let selected_function = "";
+
+
+        const selectElement = document.querySelector('#list_us');
+        selectElement.addEventListener('change', function(){
+            if(selected_function != ""){
+                hideElement(selected_function + "-form");
+            }
+            showElement(this.value + "-form");
+            selected_function = this.value ;
+            hideElement("data")
+        });
+
+
+        
+        const forms = document.querySelectorAll('form');
+
+        forms.forEach(el => el.addEventListener("submit", function(e){
+            submitButton = el.querySelector('[type="submit"]')
+            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Loading...'
+            removeButtons()
+        }));
+
+
+        function hideElement(elementId){
+            document.getElementById(elementId).style.display = "none";
+        }
+        function showElement(elementId){
+            document.getElementById(elementId).style.display = "block";
+        }
+
+        function removeButtons(){
+            var buttons = document.getElementsByClassName("tablinks")
+            for (i = 0; i < buttons.length; i++) {
+                buttons[i].remove();
+            }
+        }
+
+        function updateURL(el){
+
+            var name = $(el).attr('name').toString()
+            var nameC = "&" + name
+            var value = $(el).attr('value').toString()
+            if (window.location.href.indexOf(name)>0){
+                var ind = window.location.href.length - window.location.href.indexOf(nameC)
+                var queryString = window.location.href.substring(0, window.location.href.length - ind)
+                window.location.href = queryString + "&" + name + "=" + value
+            }else{
+                window.location.href = window.location.href + "&" + name + "=" + value
+            }
+        }
+
+    </script>
+</body>
+</html>

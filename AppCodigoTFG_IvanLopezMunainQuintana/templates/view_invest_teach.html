@@ -1,0 +1,89 @@
+<!--
+    Author: Iván López de Munain Quintana
+    Date: Feb-Jul, 2020
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Selection</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <style> 
+        .vertical { 
+            border-left: 1px solid black; 
+            height: 300px; 
+            position:absolute; 
+            left: 50%; 
+        } 
+
+        .one {
+        width: 30%;
+        height: 300px;
+        margin-left: 10%;
+        float: left;
+        }
+
+        .two {
+        margin-left: 60%;
+        margin-right: 10%;
+        height: 300px;
+        }
+    </style> 
+</head>
+<body style="background-color:#F7F7D0;">
+    <br>
+    <h1 align="center"> Access Moodle DB</h1>
+    <hr>
+    <br>
+    <form  action="/Login"  method="POST">
+        <div class="one" >    
+            <fieldset>
+            <legend style="text-align:center;display: block;padding-left: 15px;padding-right: 10px;border: 1px solid blue;background-color:skyblue;"> Learning analytics</legend>
+            <p style="text-align: justify"> This option of the application is associated with the use by university teachers
+                 in order to monitor their subjects. It will allow downloading the data associated with their subjects and
+                  obtaining a dashboard of them. This information will not be anonymized because the data is already known by the teacher
+                  due to his situation. The required credentials are the URL where you log into Moodle and its username and password.</p>
+                  <label style="vertical-align: middle;margin-right: 10px;"><input type="radio" name="select_mode" value="teacher" checked/> Access as teacher </input></label>
+            </fieldset>
+        </div>
+
+        
+
+        <div class="vertical"></div>
+
+        <div class="two" >
+        <fieldset>
+        <legend style="text-align:center;display: block;padding-left: 15px;padding-right: 10px;border: 1px solid blue;background-color:skyblue;">Research</legend>
+                <p style="text-align: justify">This option of the application is associated with the use of academic data for research purposes. Due to this,
+                     all the data will be anonymised and it only be possible to view/download the data, so the researchers can work directly with them.
+                      The required credentials are the same as in the other mode (username, password and login URL), besides the API access token and the corresponding URL.</p>
+                <label style="vertical-align: middle;margin-right: 10px;"><input type="radio" name="select_mode" value="investigator"/> Access as researcher </input></label>
+            </fieldset>
+        </div>
+        <hr style="width:30%;text-align:left; position: fixed;left:10%; top: 460px;">
+        <hr style="width:30%;text-align:right; position: fixed; right:10%; top: 460px;">
+        <div style="width: 20px;position: fixed;top:460px;left:46%">
+        <input  type="submit" value="Continue..." style="border-radius: 12px; border: 1px solid black; color: #007bff;padding-left: 15px;padding-right: 15px;"> 
+        </div>
+    </form>
+    
+    <script>
+
+        function showPass(){
+            var x = document.getElementById("password");
+            if (x.type === "password") {
+                x.type = "text";
+            } else {
+                x.type = "password";
+            }
+        }
+
+    </script>
+</body>
+</html>

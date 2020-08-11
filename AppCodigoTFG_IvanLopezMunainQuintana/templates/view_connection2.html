@@ -1,0 +1,93 @@
+<!--
+    Author: Iván López de Munain Quintana
+    Date: Feb-Jul, 2020
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Credentials</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+   
+</head>
+<body style="background-color:#F7F7D0;">
+    <br>
+    <h1 align="center"> Access Moodle DB </h1>
+    <hr>
+    <br>
+    <div id="all-forms" style="width:70%;margin: 0 auto;" >
+        <div id="back" style="padding-bottom: 10px;" > 
+            <button class="button button1" style="border-radius: 12px; border: 1px solid black;"> 
+                <a  href="/Login" style="padding-left: 5px;padding-right: 5px; ">Back</a>
+            </button>
+        </div>
+        <form id="acess_action">
+            <fieldset>
+            <legend style="display: block;padding-left: 15px;padding-right: 10px;border: 1px solid blue;background-color:skyblue;">Requierements to access...</legend>
+
+            <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">Access token</div>
+                </div>
+                <input type="text" class="form-control" id="access_token" name="access_token" >
+            </div>
+            <p style="color:grey">Example: 6b0cb9513875a6XXXXXXXXXXX</p>
+            <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text" style="width: 150%;">&nbsp Access URI &nbsp</div>
+                </div>
+                <input type="text" class="form-control" id="access_uri" name="access_uri">
+            </div>
+            <p style="color:grey">Example: http://www.mymoodle.org</p>
+
+            <div class="input-group mb-2">
+                <div class="input-group-prepend">
+                    <div class="input-group-text">&nbsp&nbsp&nbsp Protocol &nbsp&nbsp&nbsp</div>
+                </div>
+                <select class="form-control" id="access_protocol" name="access_protocol">
+                    <option value="rest">Rest</option>
+                </select>
+            </div>
+            <p style="color:grey">Only avalaible REST protocol</p>
+            </fieldset>
+                <button class="button button1"  style="border-radius: 12px; border: 1px solid black;"> 
+                    <a id="link" href="/" onclick="return passcheck()">Connecting...</a>
+                </button>  
+        </form>
+
+            
+            
+    </div>
+    <img src= "{{url_for('static', filename='logoMoodle.png')}}" alt="logo"
+    style="position:fixed; right:225px; bottom:125px; width:120px; height:50px; border:none;" />
+
+    <script>
+
+
+
+        function passcheck(){
+            tok = document.getElementById('access_token').value
+            uri = document.getElementById('access_uri').value
+            prot = document.getElementById('access_protocol').value
+            link = document.getElementById('link')
+            if(tok!="" &&  uri!="" && prot!=""){
+                uri=uri.split("/").join("-")
+                link.href = "/check_connection/" + tok +"/" + uri + "/" + prot 
+            }else{
+                alert("Please, introduce all the information.")
+            }
+
+        }
+
+
+
+
+    </script>
+</body>
+</html>
