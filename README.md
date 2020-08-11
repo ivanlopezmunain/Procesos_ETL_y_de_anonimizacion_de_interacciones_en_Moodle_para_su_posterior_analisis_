@@ -21,17 +21,16 @@ interfaces, técnicas ETL, base de datos de Moodle
 * MemoriaTFG_IvanLopezMunainQuintana: documentación completa sobre el desarrollo del proyecto, además de los manuales de instalación
 y usuario de las aplicaciones web (junto a los requisitos necesarios para su lanzamiento).
 * AppCodigoTFG_IvanLopezMunainQuintana: código correspondiente a las aplicaciones desarrolladas (ficheros en R y Python).
-  + Folders:
+  + Directorios:
     - _pycache_: python cache
-    - Download: data download from Moodle
-    - Pandoc: documentation about the version of Pandoc (to launch the R app)
-    - static: images from the interface
-    - templates: scripts htmls (views of the app)
-  + Files:
-    - app: server
-    - controller*: controllers of the application
-    - model*: models of the application
-    -  dashboard: R application
-    - integration: R script to launch dashboard.R
-    - launcher: bat file to launch app.py
-    - pandoc*: version of pandoc to allow launch dashboard
+    - Download: datos descargados de Moodle
+    - static: imágenes de la interface
+    - templates: scripts htmls (vistas de la app)
+  + Archivos:
+    - app: servidor
+    - controller*: controladores de la aplicación
+    - model*: modelos de la aplicación
+    -  dashboard: R app
+    - integration: R script para lanzar dashboard.R
+    - launcher: fichero bat para lanzar app.py
+  
