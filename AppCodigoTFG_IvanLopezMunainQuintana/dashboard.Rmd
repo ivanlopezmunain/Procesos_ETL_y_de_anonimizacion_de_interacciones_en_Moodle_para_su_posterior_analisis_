@@ -1,0 +1,1292 @@
+---
+title: "Dashboard"
+output: 
+  flexdashboard::flex_dashboard:
+    #storyboard: true
+    #orientation: rows
+    social: menu
+    source: embed
+    
+params:
+  myargs_logs: ""
+  myargs_grades: ""
+    
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+
+library(flexdashboard)
+library(dplyr)
+library(plotly)
+library(highcharter)
+#library(shiny)
+
+```
+
+```{r}
+setwd(getwd())
+
+#reading data
+data <- read.csv(paste("./", as.character(params$myargs_logs),sep=""),
+                 header=T, sep=";")
+
+grades <- read.csv(paste("./", as.character(params$myargs_grades),sep=""),
+                    header=T, sep=";")
+
+
+colnames(data)<- c("Time","ID.User","Affected.user","Event.context","Component","Event.name","Description","Origin","IP.address","ID_Moodle","Role")
+
+
+#procesing data
+data$ID.User <- factor(data$ID.User, levels = unique(data$ID.User))
+data$ID_Moodle <- factor(data$ID_Moodle, levels = unique(data$ID_Moodle))
+
+colnames(grades)<-c("Name_User", colnames(grades)[2:length(colnames(grades))])
+grades$Name_User <- factor(grades$Name_User, levels = unique(grades$Name_User))
+grades$ID_Moodle <- factor(grades$ID_Moodle, levels = unique(grades$ID_Moodle))
+
+sum<-rep(0,dim(grades)[1])
+cont<-rep(0,dim(grades)[1])
+for(i in 1:dim(grades)[1]){
+  for(j in 2:(dim(grades)[2]-1)){
+    if(as.character(grades[i,j])!="-"){
+      grades[i,j]<- grades[i,j]*10
+      sum[i] <- sum[i] + as.numeric(grades[i,j])
+      cont[i] <- cont[i] +1 
+    }
+    
+  }
+}
+
+grades$grade<-0
+for(i in 1:dim(grades)[1]){
+  grades$grade[i]<- as.numeric(sum[i])/as.numeric(cont[i])
+}
+
+auxiliar_grades_avoid <- grades
+
+
+```
+
+
+`r paste("Home ", shiny::icon("home"))`
+=======================================================================
+
+Input {.sidebar}
+-----------------------------------------------------------------------
+
+### **Summary**
+
+This dashboard is a R shiny app build under the version 3.5.0 of R. The aim of this dashboard is analyze the interactions of university students in a learning e-Systems called Moodle.
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+*Click the button to finish the dashboard and come back to the Moodle application.
+<br>
+
+```{r}
+
+#button to close app
+
+shiny::tags$button(
+            id = 'close',
+            type = "button",
+            class = "btn btn-primary action-button",
+            onclick = "setTimeout(function(){alert('Please close the tab, your interaction with the dashboard is finished.');},500);",
+            "Close aplication"
+        )
+    
+close_1 <- shiny::reactive(as.character(input$close))
+
+
+shiny::renderUI({
+            if(close_1()>0) {shiny::stopApp()}
+  })
+
+```
+
+
+
+Column 
+-----------------------------------------------------------------------
+
+
+#### **Exploratory**
+
+That section study the relation between the grades obtain by the students and the number of interactions that they have made in Moodle. Furthermore, it shows the total number of students, the total number of interactions, the number of interactions per user and the average grade.
+
+* The tab represent the following graphs:
+  + Different *value-boxes*.
+  + *Bar chart* of interactions and grades of user 
+  + *Bar chart* with the marks of a user during the course.
+  + It is possible to choose the range of marks thanks a *slider*.
+  + It is possible to select a specific student thanks a *selector*.
+
+#### **Time series**
+
+That page shows the interactions of users along the time. Also, it allows to analyze the distribution of the interactions along the day, making a clustering between 'Early Morning', 'Morning', 'Midday', 'Afternoon', 'Evening' and 'Night'.
+
+* The tab represent the following graphs:
+  + *Global* time series.
+  + Time series by *hour cluster*.
+  + *Pie chart* and *bar chart* representing the distribution of the hour cluster.
+  + It is possible to choose an user to study it individually thanks a *selector*.
+  + It is possible to select a specific role thanks a *radioButtons*.
+  
+
+#### **Events**
+
+That section allows to analyze the type and the distribution of the differents actions and events that the users did in Moodle.
+
+* The tab represent the following graphs:
+  + *Tree map* and *bar chart* of the different actions and events.
+  + *Donut chart* of type of modules which have been affected by the interactions.
+  + It is possible to choose an user to study it individually thanks a *selector*.
+  + It is possible to select a specific role thanks a *radioButtons*.
+  
+
+
+
+
+`r paste("Exploratory ", shiny::icon("chart-bar"))` {data-orientation=rows}
+=======================================================================
+
+
+
+
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+
+In that section, it is possible to analyze the relation between the number of interactions of a user in Moodle and the average grade he has get in the course. Besides, it is possible to view the grades of a specific student. You can select the range of the marks or select a determine user.
+
+<hr>
+
+```{r}
+
+#slider
+shiny::sliderInput("slider_mark", label = shiny::h4("Select the mark range:"), min = 0, 
+        max = 10, value = c(0, 10))
+
+
+list_ids<-list()
+for(i in 1:length(grades$Name_User)){
+  list_ids[[i]]<- paste("User ID:", grades$Name_User[i])
+}
+
+#select
+shiny::selectInput("select_user_0", label = shiny::h4("Select the student:"), 
+  choices = c("All users",list_ids), 
+  selected = 1)
+
+user_id_0 <- shiny::reactive(as.character(input$select_user_0))
+
+
+```
+
+
+Row {data-height=150}
+-----------------------------------------------------------------------
+
+### Average grade {.value-box}
+
+```{r}
+
+#valueBox of the average grade
+
+renderValueBox({
+  
+  
+  if(user_id_0()!="All users"){
+    
+    filter_id <- as.character(strsplit(as.character(user_id_0()),":")[[1]][2])
+
+    a_aux_g <- grades %>% filter(as.character(Name_User)==trimws(filter_id)) 
+    
+  }else{
+    a_aux_g <- grades
+  }
+  
+  valueBox(
+    value = round(sum(as.numeric(a_aux_g$grade))/dim(a_aux_g)[1],2),
+    icon = "fa-graduation-cap",
+    color = "warning"
+  )
+})
+
+
+```
+
+### Interactions/user {.value-box}
+
+```{r}
+
+#valueBox of the interactions by user
+
+a_aux <- data %>% filter(Role=="Student")
+
+renderValueBox({
+  
+  if(user_id_0()!="All users"){
+    
+    filter_id <- as.character(strsplit(as.character(user_id_0()),":")[[1]][2])
+    id_m <- as.character(grades$ID_Moodle[which(grades$Name_User==trimws(filter_id))])
+    a_aux <- a_aux %>% filter(as.character(ID_Moodle)==id_m)
+    
+  }else{
+    a_aux <- a_aux
+  }
+  
+  valueBox(
+    value = round(dim(a_aux)[1]/length(unique(a_aux$ID.User)),2),
+    icon = "fa-area-chart",
+    color = "primary"
+  )
+})
+```
+
+### Total interactions {.value-box}
+
+```{r}
+
+#valueBox of the total interactions
+
+a_aux <- data %>% filter(Role=="Student")
+renderValueBox({
+  
+  if(user_id_0()!="All users"){
+    
+    filter_id <- as.character(strsplit(as.character(user_id_0()),":")[[1]][2])
+    id_m <- as.character(grades$ID_Moodle[which(grades$Name_User==trimws(filter_id))])
+    a_aux <- a_aux %>% filter(as.character(ID_Moodle)==id_m)
+    
+  }else{
+    a_aux <- a_aux
+  }
+  
+  valueBox(value= dim(a_aux)[1], icon = "fa-chalkboard-teacher", color="success")
+})
+```
+
+### Total students {.value-box}
+
+```{r}
+
+#valueBox of the total students
+
+a_aux <- data %>% filter(Role=="Student")
+renderValueBox({
+  
+  if(user_id_0()!="All users"){
+    
+    filter_id <- as.character(strsplit(as.character(user_id_0()),":")[[1]][2])
+    id_m <- as.character(grades$ID_Moodle[which(grades$Name_User==trimws(filter_id))])
+    a_aux <- a_aux %>% filter(as.character(ID_Moodle)==id_m)
+
+  }else{
+    a_aux <- a_aux
+  }
+  
+  valueBox(value = length(unique(a_aux$ID.User)), icon = "fa-users", color="info")
+})
+```
+
+Row {.tabset}
+-----------------------------------------------------------------------
+
+### Relation between grades and interactions in Moodle
+
+```{r}
+
+interactions<-data %>% filter(Role=="Student") %>% count(ID.User,ID_Moodle)
+interactions$ID.User <- as.factor(interactions$ID.User)
+grades$Name_User <- as.factor(grades$Name_User)
+interactions <- inner_join(interactions,grades)
+
+num <- shiny::reactive({as.integer(input$slider_mark)})
+
+#barchart: interactions and grades
+renderPlotly({
+
+    ay <- list(
+      overlaying = "y",
+      side = "right",
+      title = "Number of interactions Axis"
+    )
+    
+    aux_interactions <- interactions  %>% 
+      filter(grade>=num()[1])  %>%
+      filter(grade<=num()[2])
+
+    if(user_id_0()!="All users"){
+      
+      filter_id <- as.character(strsplit(as.character(user_id_0()),":")[[1]][2])
+  
+      aux_interactions <- aux_interactions %>%
+        filter(as.character(Name_User)==trimws(filter_id)) 
+      
+    }else{
+      aux_interactions <- aux_interactions
+    }
+    
+    p <- plot_ly() %>% 
+      add_bars(aux_interactions, 
+               x = reorder(aux_interactions$ID.User,aux_interactions$grade),
+               y = aux_interactions$grade, name = 'Average grade', 
+               text=paste ("User ID: ",aux_interactions$ID.User,
+                           "<br>Average grade: ", aux_interactions$grade),
+               marker = list(color ='rgb(250,154,133)',
+                              line = list(color = 'rgb(252,94,60)',
+                                          width = 1.5)), offsetgroup = 1) %>%
+      add_bars(aux_interactions, x = aux_interactions$ID.User, y = aux_interactions$n,
+               name = 'Total interactions', 
+               text=paste ("User ID: ",aux_interactions$ID.User,
+                           "<br>Total interactions: ", aux_interactions$n),
+               marker = list(color = 'rgb(158,202,225)',
+                               line = list(color = 'rgb(8,48,100)', width = 1.5)),
+               yaxis = "y2", offsetgroup = 2) %>%
+      layout(yaxis2 = ay,
+             xaxis = list(title = "Users", tickangle = -25),
+             yaxis = list(title = "Average grade Axis"),
+             margin = list(b = 100),
+             barmode = 'group',
+             legend = list(x = 1.1, y = 1))
+  
+  })
+
+
+
+
+
+
+
+
+```
+
+
+### Grades during the course
+
+```{r}
+
+#processing marks
+a_gr<-matrix(0,nrow = dim(grades)[2]-2,ncol=dim(grades)[1])
+colnames(a_gr)<-as.character(auxiliar_grades_avoid$Name_User)
+rownames(a_gr)<-
+  colnames(auxiliar_grades_avoid)[c(2:(dim(auxiliar_grades_avoid)[2]-2),
+                                    dim(auxiliar_grades_avoid)[2])]
+
+for(i in 1:dim(auxiliar_grades_avoid)[1]){
+  for(j in 2:(dim(auxiliar_grades_avoid)[2]-2)){
+      if(auxiliar_grades_avoid[i,j]=="-"){
+          a_gr[j-1,i]<-NA
+      }else{
+          a_gr[j-1,i]<-auxiliar_grades_avoid[i,j]
+      }
+    }
+  }
+
+for(i in 1:dim(a_gr)[2]){
+  a_gr[dim(a_gr)[1],i]<-auxiliar_grades_avoid$grade[i]
+}
+
+a_gr<- as.data.frame(a_gr)
+
+#barchart: grades
+renderPlotly({
+  
+    print(a_gr)
+    if(user_id_0()!="All users"){
+      
+      filter_id <- as.character(strsplit(as.character(user_id_0()),":")[[1]][2])
+    
+      aux_rownames<-c(rownames(a_gr))
+      a_gr <- a_gr %>%
+        dplyr::select(trimws(filter_id)) 
+      colnames(a_gr)<-c("Us")
+      
+      rownames(a_gr)<-c(aux_rownames)
+      rownames(a_gr)[length(rownames(a_gr))]<-"Mean grade"
+      
+      a_gr <- a_gr  %>% 
+        tibble::rownames_to_column('aux') %>%
+        filter(!is.na(Us)) %>% 
+        filter(Us>=num()[1])  %>%
+        filter(Us<=num()[2]) %>% 
+        tibble::column_to_rownames('aux')
+      
+      
+     fig <- plot_ly(a_gr, x = rownames(a_gr), y = a_gr[,1] ,type = 'bar',
+                  textposition = 'auto',
+                 marker = list(color = 'rgb(158,202,225)',
+                               line = list(color = 'rgb(8,48,107)', width = 1.5)))
+    fig <- fig %>% layout(title = "Grades obtained during the course",
+             xaxis = list(title = ""),
+             yaxis = list(title = ""))
+    
+    fig
+    }else{
+      
+      plot_ly(x=c(1),y=c(1), text="You must select a specific student to view his marks.") %>% layout(title = "You must select a specific student to view his marks.")
+    }
+      
+})
+
+
+
+
+```
+
+
+
+`r paste("Times series ", shiny::icon("chart-line"))` {orientation=rows}
+=======================================================================
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+
+In that section, it is possible to analyze the temporal evolution of interactions along the course. It is possible to select the role or the ID of a user. The cluster hour is defined:
+
+  + Early Morning: 5:00-7:00
+  + Morning: 7:00-14:00
+  + Midday: 14:00-16:00
+  + Afternoon: 16:00-20:00
+  + Evening: 20:00-23:00
+  + Night: 23:00-5:00
+  
+<hr>
+
+```{r}
+
+list_ids<-list()
+for(i in 1:length(unique(data$ID.User))){
+  list_ids[[i]]<- paste("User ID:", unique(data$ID.User)[i])
+}
+
+shiny::selectInput("select_user", label = shiny::h4("Select the user:"), 
+  choices = c("All users",list_ids), 
+  selected = 1)
+
+user_id <- shiny::reactive(as.character(input$select_user))
+
+shiny::radioButtons("radio1", label=shiny::h4("Select the rol:"), c("All", "Student","Teacher"))
+
+rol1 <- shiny::reactive(as.character(input$radio1))
+
+
+```
+
+Row {.tabset}
+-----------------------------------------------------------------------
+
+### General
+
+```{r}
+
+#general time series (interactions)
+
+renderPlotly({
+  
+#input filters
+if(user_id()!="All users"){
+  
+  filter_id <- as.character(strsplit(as.character(user_id()),":")[[1]][2])
+  
+  shiny::updateRadioButtons(
+      session, "radio1", selected=
+        as.character(data$Role[which(as.character(data$ID.User)==trimws(filter_id))[1]]))
+  
+  if(rol1()!="All"){
+    interactions_date<- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%
+      filter(Role==rol1()) %>%  count(Time)
+  }else{
+    
+    filter_id <- as.character(strsplit(as.character(user_id()),":")[[1]][2])
+    interactions_date<- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%  count(Time)
+    
+  }
+}else{
+  
+  if(rol1()!="All"){
+    interactions_date<- data %>% filter(Role==rol1()) %>%  count(Time)
+  
+  }else{
+    interactions_date<- data %>% count(Time)
+  }
+}
+
+#processing dates
+interactions_date$Time_OM <- as.character(interactions_date$Time)
+interactions_date$Time_Hour<-as.character(interactions_date$Time)
+
+for(i in 1:dim(interactions_date)[1]){
+  interactions_date$Time_OM[i]<-
+    strsplit(as.character(interactions_date$Time_OM[i])," ")[[1]][1]
+  interactions_date$Time_Hour[i]<-
+    strsplit(as.character(interactions_date$Time_Hour[i])," ")[[1]][2]
+}
+
+#creating hour clusters
+interactions_date$cluster_hour<-0
+for(i in 1:dim(interactions_date)[1]){
+  hora <- as.numeric(strsplit(as.character(interactions_date$Time_Hour[i]),":")[[1]][1])
+  
+  if(hora<5){
+    interactions_date$cluster_hour[i]<-"Night"
+  }else if(4<hora && hora<7){
+    interactions_date$cluster_hour[i]<-"Early Morning"
+  }else if(6<hora && hora<14){
+    interactions_date$cluster_hour[i]<-"Morning"
+  }else if(13<hora && hora<16){
+    interactions_date$cluster_hour[i]<-"Midday"
+  }else if(15<hora && hora<20){
+    interactions_date$cluster_hour[i]<-"Afternoon"
+  }else if(19<hora && hora<23){
+    interactions_date$cluster_hour[i]<-"Evening"
+  }else{
+    interactions_date$cluster_hour[i]<-"Night"
+  }
+}
+
+interactions_date <- interactions_date[order(
+  as.Date.character(interactions_date$Time_OM,format = "%d/%m/%Y")),]
+
+interactions_date$Time_OM <- factor(
+  interactions_date$Time_OM, levels=unique(interactions_date$Time_OM))
+
+interactions_date$cluster_hour<-factor( interactions_date$cluster_hour,
+                                        levels=unique(interactions_date$cluster_hour))
+
+inter_date_1 <- as.data.frame (tapply(interactions_date$n,interactions_date$Time_OM, sum ))
+
+inter_date_1<- data.frame(dates=row.names(inter_date_1),
+                          interactions_d=inter_date_1[,1])
+
+
+inter_date_1$dates <- factor(
+  inter_date_1$dates, levels=unique(inter_date_1$dates))
+
+
+
+inter_date_2 <- interactions_date %>% count(Time_OM, cluster_hour)
+
+  
+fig <-
+  plot_ly(x = ~inter_date_1$dates,
+          y = ~inter_date_1$interactions_d,
+          text= 
+            paste("Date: ", inter_date_1$dates,
+                  "<br>Number of interactions: ", inter_date_1$interactions_d ),
+          mode = 'lines')
+fig <- fig %>% layout(title = "Time series of interactions",
+     barmode = 'group',
+     xaxis = list(title = "Dates"),
+     yaxis = list(title = "Total interactions"))
+
+})
+
+
+```
+
+
+
+### By hour clustering
+
+
+```{r}
+
+#time series by hour clustering (interactions)
+#same method than before
+
+renderPlotly({
+  
+if(user_id()!="All users"){
+  
+  filter_id <- as.character(strsplit(as.character(user_id()),":")[[1]][2])
+  
+  shiny::updateRadioButtons(
+      session, "radio1", selected=
+        as.character(data$Role[which(as.character(data$ID.User)==trimws(filter_id))[1]]))
+  
+  if(rol1()!="All"){
+  
+    interactions_date<- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%
+      filter(Role==rol1()) %>%  count(Time)
+  }else{
+    
+    filter_id <- as.character(strsplit(as.character(user_id()),":")[[1]][2])
+    interactions_date<- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%  count(Time)
+    
+  }
+}else{
+  
+  if(rol1()!="All"){
+    interactions_date<- data %>% filter(Role==rol1()) %>%  count(Time)
+  
+  }else{
+    interactions_date<- data %>% count(Time)
+  }
+}
+
+  
+interactions_date$Time_OM <- as.character(interactions_date$Time)
+interactions_date$Time_Hour<-as.character(interactions_date$Time)
+
+for(i in 1:dim(interactions_date)[1]){
+  interactions_date$Time_OM[i]<-
+    strsplit(as.character(interactions_date$Time_OM[i])," ")[[1]][1]
+  interactions_date$Time_Hour[i]<-
+    strsplit(as.character(interactions_date$Time_Hour[i])," ")[[1]][2]
+}
+
+interactions_date$cluster_hour<-0
+for(i in 1:dim(interactions_date)[1]){
+  hora <- as.numeric(strsplit(as.character(interactions_date$Time_Hour[i]),":")[[1]][1])
+  
+  if(hora<5){
+    interactions_date$cluster_hour[i]<-"Night"
+  }else if(4<hora && hora<7){
+    interactions_date$cluster_hour[i]<-"Early Morning"
+  }else if(6<hora && hora<14){
+    interactions_date$cluster_hour[i]<-"Morning"
+  }else if(13<hora && hora<16){
+    interactions_date$cluster_hour[i]<-"Midday"
+  }else if(15<hora && hora<20){
+    interactions_date$cluster_hour[i]<-"Afternoon"
+  }else if(19<hora && hora<23){
+    interactions_date$cluster_hour[i]<-"Evening"
+  }else{
+    interactions_date$cluster_hour[i]<-"Night"
+  }
+}
+
+interactions_date <- interactions_date[order(
+  as.Date.character(interactions_date$Time_OM,format = "%d/%m/%Y")),]
+
+interactions_date$Time_OM <- factor(
+  interactions_date$Time_OM, levels=unique(interactions_date$Time_OM))
+
+interactions_date$cluster_hour<-factor( interactions_date$cluster_hour,
+                                        levels=unique(interactions_date$cluster_hour))
+
+inter_date_1 <- as.data.frame (tapply(interactions_date$n,interactions_date$Time_OM, sum ))
+
+inter_date_1<- data.frame(dates=row.names(inter_date_1),
+                          interactions_d=inter_date_1[,1])
+
+
+inter_date_1$dates <- factor(
+  inter_date_1$dates, levels=unique(inter_date_1$dates))
+
+
+
+inter_date_2 <- interactions_date %>% count(Time_OM, cluster_hour)
+
+    layout <- list(
+        title = "Historic of interactions",
+        xaxis = list(
+          range = c(as.Date(inter_date_2$Time_OM[
+            length(inter_date_2$Time_OM)],format="%d/%m/%Y")-60,
+            
+                    as.Date(inter_date_2$Time_OM[
+                      length(inter_date_2$Time_OM)],format="%d/%m/%Y")),
+          rangeselector = list(
+            buttons = list(
+              list(
+                count = 3,
+                label = "3 mo",
+                step = "month",
+                stepmode = "backward"),
+              list(
+                count = 6,
+                label = "6 mo",
+                step = "month",
+                stepmode = "backward"),
+              list(
+                count = 1,
+                label = "1 yr",
+                step = "year",
+                stepmode = "backward"),
+              list(
+                count = 1,
+                label = "Yr-Today",
+                step = "year",
+                stepmode = "todate"),
+              list(
+                label="All",
+                step = "all"))),
+    
+          rangeslider = list(type = "date")),
+    
+        yaxis = list(title = "Number of interactions"))
+
+    
+    p <- plot_ly()
+    p <- add_trace(p, type="bar",
+                   x=as.Date(inter_date_2$Time_OM,format="%d/%m/%Y"),
+                   y=inter_date_2$n,
+                   color=inter_date_2$cluster_hour,
+                   text= 
+                  paste("Date: ", as.Date(inter_date_2$Time_OM,format="%d/%m/%Y"),
+                        "<br>Cluster: ", inter_date_2$cluster_hour,
+                        "<br>Number of interactions: ",inter_date_2$n ))
+    p <- layout(p, title=layout$title, xaxis=layout$xaxis, yaxis=layout$yaxis)
+
+  
+})
+
+
+
+
+
+
+```
+
+### Distribution by hour clustering
+
+
+```{r}
+
+#pie chart and two barchart showing the distribution of interactions by hour clustering
+
+renderPlotly({
+
+if(user_id()!="All users"){
+  
+  filter_id <- as.character(strsplit(as.character(user_id()),":")[[1]][2])
+  
+  shiny::updateRadioButtons(
+      session, "radio1", selected=
+        as.character(data$Role[which(as.character(data$ID.User)==trimws(filter_id))[1]]))
+  
+  if(rol1()!="All"){
+    interactions_date<- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%
+      filter(Role==rol1()) %>%  count(Time)
+  }else{
+    
+    filter_id <- as.character(strsplit(as.character(user_id()),":")[[1]][2])
+    interactions_date<- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%  count(Time)
+    
+  }
+}else{
+  
+  if(rol1()!="All"){
+    interactions_date<- data %>% filter(Role==rol1()) %>%  count(Time)
+  
+  }else{
+    interactions_date<- data %>% count(Time)
+  }
+}
+
+  
+interactions_date$Time_OM <- as.character(interactions_date$Time)
+interactions_date$Time_Hour<-as.character(interactions_date$Time)
+
+for(i in 1:dim(interactions_date)[1]){
+  interactions_date$Time_OM[i]<-
+    strsplit(as.character(interactions_date$Time_OM[i])," ")[[1]][1]
+  interactions_date$Time_Hour[i]<-
+    strsplit(as.character(interactions_date$Time_Hour[i])," ")[[1]][2]
+}
+
+interactions_date$cluster_hour<-0
+for(i in 1:dim(interactions_date)[1]){
+  hora <- as.numeric(strsplit(as.character(interactions_date$Time_Hour[i]),":")[[1]][1])
+  
+  if(hora<5){
+    interactions_date$cluster_hour[i]<-"Night"
+  }else if(4<hora && hora<7){
+    interactions_date$cluster_hour[i]<-"Early Morning"
+  }else if(6<hora && hora<14){
+    interactions_date$cluster_hour[i]<-"Morning"
+  }else if(13<hora && hora<16){
+    interactions_date$cluster_hour[i]<-"Midday"
+  }else if(15<hora && hora<20){
+    interactions_date$cluster_hour[i]<-"Afternoon"
+  }else if(19<hora && hora<23){
+    interactions_date$cluster_hour[i]<-"Evening"
+  }else{
+    interactions_date$cluster_hour[i]<-"Night"
+  }
+}
+
+interactions_date <- interactions_date[order(
+  as.Date.character(interactions_date$Time_OM,format = "%d/%m/%Y")),]
+
+interactions_date$Time_OM <- factor(
+  interactions_date$Time_OM, levels=unique(interactions_date$Time_OM))
+
+interactions_date$cluster_hour<-factor( interactions_date$cluster_hour,
+                                        levels=unique(interactions_date$cluster_hour))
+
+inter_date_1 <- as.data.frame (tapply(interactions_date$n,interactions_date$Time_OM, sum ))
+
+inter_date_1<- data.frame(dates=row.names(inter_date_1),
+                          interactions_d=inter_date_1[,1])
+
+
+inter_date_1$dates <- factor(
+  inter_date_1$dates, levels=unique(inter_date_1$dates))
+
+
+
+inter_date_2 <- interactions_date %>% count(Time_OM, cluster_hour)
+
+data_cluster_hour <- interactions_date %>%  count(cluster_hour)
+
+
+colors <- c('rgb(211,94,96)', 'rgb(128,133,133)', 'rgb(144,103,167)', 'rgb(171,104,87)', 'rgb(114,147,203)','rgb(252,165,77)')
+fig <- plot_ly(data_cluster_hour, labels = ~cluster_hour, values = ~n, type = 'pie',
+        textposition = 'inside',
+        textinfo = 'label+percent',
+        insidetextfont = list(color = '#FFFFFF'),
+        hoverinfo = 'text',
+        text = ~paste('Number of interactions in the ',cluster_hour,":", n),
+        marker = list(colors = colors,
+                      line = list(color = '#FFFFFF', width = 1)),
+                      #The 'pull' attribute can also be used to create space between the sectors
+        showlegend = FALSE)
+
+
+fig <- fig %>% layout(title = 'Distribution of interactions along the day (percentage and total)',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE,
+                      domain = c(0.5, 1)),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+
+moments <- c("Early Morning", "Morning", "Midday")
+
+if(length(which(data_cluster_hour$cluster_hour=="Early Morning"))>0){
+  a <-data_cluster_hour$n[which(data_cluster_hour$cluster_hour=="Early Morning")]
+}else{
+  a<-0
+}
+
+if(length(which(data_cluster_hour$cluster_hour=="Morning"))>0){
+  b <-data_cluster_hour$n[which(data_cluster_hour$cluster_hour=="Morning")]
+}else{
+  b<-0
+}
+
+
+if(length(which(data_cluster_hour$cluster_hour=="Midday"))>0){
+  c <-data_cluster_hour$n[which(data_cluster_hour$cluster_hour=="Midday")]
+}else{
+  c<-0
+}
+
+value<-c(a,b,c)
+data_1 <- data.frame(moments,value)
+
+moments <- c("Afternoon", "Evening", "Night")
+
+if(length(which(data_cluster_hour$cluster_hour=="Afternoon"))>0){
+  a <-data_cluster_hour$n[which(data_cluster_hour$cluster_hour=="Afternoon")]
+}else{
+  a<-0
+}
+
+if(length(which(data_cluster_hour$cluster_hour=="Evening"))>0){
+  b <-data_cluster_hour$n[which(data_cluster_hour$cluster_hour=="Evening")]
+}else{
+  b<-0
+}
+
+
+if(length(which(data_cluster_hour$cluster_hour=="Night"))>0){
+  c <-data_cluster_hour$n[which(data_cluster_hour$cluster_hour=="Night")]
+}else{
+  c<-0
+}
+
+
+value<-c(a,b,c)
+
+data_2 <- data.frame(moments,value)
+
+
+
+p1 <- plot_ly() %>%  add_trace(data_1, x = data_1$moments, y = data_1$value,
+                               type = 'bar',
+                               marker = list(color = 'rgb(158,202,225)',
+                           line = list(color = 'rgb(8,48,107)', width = 1)),
+                               name="First part of the day")
+p2 <- plot_ly() %>%  add_trace(data_2, x = data_2$moments, y = data_2$value,
+                               type = 'bar', name="Second part of the day",
+                               marker = list(color = 'rgb(58,200,225)',
+                          line = list(color = 'rgb(8,48,107)', width = 1)))
+
+
+
+p1 <- p1 %>% layout(
+         xaxis = list(domain = c(0.1,0.6)))
+
+p2 <- p2 %>% layout(
+         xaxis = list(domain = c(0.5,1)))
+
+final<-subplot(p1,fig,p2)
+
+final
+  
+
+
+  
+})
+
+
+```
+
+`r paste("Events ", shiny::icon("calendar-alt"))`
+=======================================================================
+
+Inputs {.sidebar}
+-----------------------------------------------------------------------
+
+In this section, you can analyze the distribution of the type of actions performed by the users. Furthermore, it is possible to study the modules/resources which are affected by the interactions. You can select the role or the ID of a user.
+
+<hr>
+
+```{r}
+
+#inputs filter
+list_ids<-list()
+for(i in 1:length(unique(data$ID.User))){
+  list_ids[[i]]<- paste("User ID:", unique(data$ID.User)[i])
+}
+
+shiny::selectInput("select_user2", label = shiny::h4("Select the user:"), 
+    choices = c("All users",list_ids), 
+    selected = 1)
+
+user_id2 <- shiny::reactive(as.character(input$select_user2))
+
+shiny::radioButtons("radio2", label=shiny::h4("Select the rol:"), c("All", "Student","Teacher"))
+
+rol2 <- shiny::reactive(as.character(input$radio2))
+
+
+```
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+### Actions treemap
+
+```{r, fig.keep="none"}
+
+
+thm <- 
+  hc_theme(
+    colors = c("#1a6ecc", "#434348", "#90ed7d"),
+    chart = list(
+      backgroundColor = "transparent",
+      style = list(fontFamily = "Source Sans Pro")
+    ),
+    xAxis = list(
+      gridLineWidth = 1
+    )
+  )
+
+
+
+#treemap of events
+renderHighchart({
+  
+  
+if(user_id2()!="All users"){
+    
+    filter_id <- as.character(strsplit(as.character(user_id2()),":")[[1]][2])
+    shiny::updateRadioButtons(
+      session, "radio2", selected=
+        as.character(data$Role[which(as.character(data$ID.User)==trimws(filter_id))[1]]))
+
+  
+  if(rol2()!="All"){
+    dist_event <- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%
+      filter(Role==rol2())  %>% count(Event.name)
+  }else{
+    
+    filter_id <- as.character(strsplit(as.character(user_id2()),":")[[1]][2])
+    dist_event<- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%  count(Event.name)
+    
+  }
+}else{
+  
+  if(rol2()!="All"){
+    dist_event<- data %>% filter(Role==rol2()) %>%  count(Event.name)
+  
+  }else{
+    dist_event<- data %>% count(Event.name)
+  }
+}
+
+dist_event$Category <- "Others"
+dicc_actions <- c("crea"="create", "borra"="delete", "actualiza"="update", "vis"="view", "subid"="upload","descarga"="download")
+
+actions <- names(dicc_actions)
+
+for (i in 1:dim(dist_event)[1]){
+  for(j in 1:length(actions)){
+    if(grepl(actions[j], as.character(dist_event$Event.name[i]),fixed=TRUE)){
+      dist_event$Category[i] <- dicc_actions[actions[j]]
+      break
+    }
+  }
+}
+
+
+aux_event <- as.data.frame(tapply(dist_event$n, as.factor(dist_event$Category),sum))
+
+
+dist_event$n <- as.numeric(dist_event$n)
+dist_event$Event.name <- as.character(dist_event$Event.name)
+
+pal <-rev(viridisLite::viridis(40))
+
+colnames(dist_event) <- c("subcategory", "values", "category")
+tm <- treemap::treemap(dist_event, index = c("category", "subcategory"),
+              vSize = "values", vColor = "values",
+              type = "value", palette = pal[c(1,5,10,25,35,40)] )
+
+
+
+highchart() %>% 
+  hc_add_series_treemap(tm, allowDrillToNode = TRUE,
+                        layoutAlgorithm = "squarified") %>% 
+  hc_add_theme(thm)
+
+
+ 
+
+})
+
+
+
+```
+
+
+
+
+### Actions bar chart
+
+
+```{r}
+
+
+#general barchart of type actions
+
+renderHighchart({
+  
+  
+if(user_id2()!="All users"){
+    
+    filter_id <- as.character(strsplit(as.character(user_id2()),":")[[1]][2])
+    shiny::updateRadioButtons(
+      session, "radio2", selected=
+        as.character(data$Role[which(as.character(data$ID.User)==trimws(filter_id))[1]]))
+  
+  if(rol2()!="All"){
+    dist_event <- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%
+      filter(Role==rol2())  %>% count(Event.name)
+  }else{
+    
+    filter_id <- as.character(strsplit(as.character(user_id2()),":")[[1]][2])
+    dist_event<- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%  count(Event.name)
+    
+  }
+}else{
+  
+  if(rol2()!="All"){
+    dist_event<- data %>% filter(Role==rol2()) %>%  count(Event.name)
+  
+  }else{
+    dist_event<- data %>% count(Event.name)
+  }
+}
+  
+  dist_event$Category <- "Others"
+  dicc_actions <- c("crea"="create", "borra"="delete", "actualiza"="update",
+                    "vis"="view", "subid"="upload","descarga"="download")
+
+  actions <- names(dicc_actions)
+  
+  for (i in 1:dim(dist_event)[1]){
+    for(j in 1:length(actions)){
+      if(grepl(actions[j], as.character(dist_event$Event.name[i]),fixed=TRUE)){
+        dist_event$Category[i] <- dicc_actions[actions[j]]
+        break
+      }
+    }
+  }
+  
+  
+  aux_event <- as.data.frame(tapply(dist_event$n, as.factor(dist_event$Category),sum))
+    
+  a_event <- data.frame(Label=row.names(aux_event), Value=aux_event[,1])
+  
+  a_event <- a_event[order(a_event$Value,decreasing=T),]
+  a_event %>% 
+    .$Label %>% 
+    rep(times = a_event$Value) %>% 
+    factor(levels = unique(.)) %>% 
+    hchart(showInLegend = FALSE, name = "Times", pointWidth = 10) %>% 
+    hc_add_theme(thm) %>% 
+    hc_chart(type = "bar")
+  
+
+})
+
+
+
+```
+
+
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+
+### Type of module/resource affected
+
+
+```{r}
+
+#donut chart of general modules/resources affected
+renderPlotly({
+  
+  if(user_id2()!="All users"){
+    
+    filter_id <- as.character(strsplit(as.character(user_id2()),":")[[1]][2])
+    shiny::updateRadioButtons(
+      session, "radio2", selected=
+        as.character(data$Role[which(as.character(data$ID.User)==trimws(filter_id))[1]]))
+  
+  if(rol2()!="All"){
+    df <- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%
+      filter(Role==rol2())  %>% count(Event.context)
+  }else{
+    
+    filter_id <- as.character(strsplit(as.character(user_id2()),":")[[1]][2])
+    df<- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%  count(Event.context)
+    
+  }
+}else{
+  
+  if(rol2()!="All"){
+    df<- data %>% filter(Role==rol2()) %>%  count(Event.context)
+  
+  }else{
+    df<- data %>% count(Event.context)
+  }
+}
+  
+  df$General_E <- "Others"
+  for(i in 1:dim(df)[1]){
+    if(length(strsplit(as.character(df$Event.context[i]),":")[[1]])>1){
+      df$General_E[i] <- strsplit(as.character(df$Event.context[i]),":")[[1]][1]
+    }
+  
+  }
+  
+  event_general <- as.data.frame(tapply(df$n, df$General_E, sum))
+  
+  pct <- round(event_general[,1]/sum(event_general[,1]),2)
+  pct[pct<0.02] <- 0 
+  pct <- paste0(pct*100, "%")
+  pct[grep("0%", pct)] <- ""
+  
+  fig <- plot_ly(labels =row.names(event_general), values = event_general[,1],text = pct,
+        textposition = "inside",
+        textinfo = "text")
+  fig <- fig %>% add_pie(hole = 0.6, rotation=150)
+  fig <- fig %>% layout(title = "Distribution type of modules and resources affected",
+                        showlegend = F,
+                        xaxis = list(showgrid = FALSE, zeroline = FALSE,
+                                     showticklabels = FALSE),
+                        yaxis = list(showgrid = FALSE, zeroline = FALSE,
+                                     showticklabels = FALSE))
+
+})
+
+
+
+
+```
+
+
+### Especified module/resource affected
+
+
+```{r}
+
+#donut chart of specific modules/resources affected
+
+renderPlotly({
+  
+    
+  if(user_id2()!="All users"){
+    
+    filter_id <- as.character(strsplit(as.character(user_id2()),":")[[1]][2])
+    shiny::updateRadioButtons(
+      session, "radio2", selected=
+        as.character(data$Role[which(as.character(data$ID.User)==trimws(filter_id))[1]]))
+  
+  if(rol2()!="All"){
+    df <- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%
+      filter(Role==rol2())  %>% count(Event.context)
+  }else{
+    
+    filter_id <- as.character(strsplit(as.character(user_id2()),":")[[1]][2])
+    df<- data %>% filter(as.character(ID.User)==trimws(filter_id)) %>%  count(Event.context)
+    
+  }
+}else{
+  
+  if(rol2()!="All"){
+    df<- data %>% filter(Role==rol2()) %>%  count(Event.context)
+  
+  }else{
+    df<- data %>% count(Event.context)
+  }
+}
+  
+  df <- df[order(df$Event.context),]
+
+  df$Event.context<- factor(df$Event.context, levels=unique(df$Event.context))
+  
+  pct <- round(df$n/sum(df$n),2)
+  pct[pct<0.02] <- 0 
+  pct <- paste0(pct*100, "%")
+  pct[grep("0%", pct)] <- ""
+  
+  fig <- df %>% plot_ly(labels = ~Event.context, values = ~n,text = pct,
+        textposition = "inside",
+        textinfo = "text")
+  fig <- fig %>% add_pie(hole = 0.6, rotation=150)
+  fig <- fig %>% layout(title =
+                          "Determined modules and resources affected",
+                        showlegend = F,
+                        xaxis = list(showgrid = FALSE, zeroline = FALSE,
+                                     showticklabels = FALSE),
+                        yaxis = list(showgrid = FALSE, zeroline = FALSE,
+                                     showticklabels = FALSE))
+
+})
+
+
+
+
+```
+
+
+
+
+
